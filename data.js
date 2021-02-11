@@ -6,9 +6,9 @@
 //ヘッダ背景(2x)
 let headImg_2x = new Image();
 headImg_2x.src = "images/games_header@2x.png";
-//ヘッダ背景(1x)
-let headImg    = new Image();
-headImg.src    = "images/games_header.png";
+// //ヘッダ背景(1x)
+// let headImg    = new Image();
+// headImg.src    = "images/games_header.png";
 
 
 //ハート(2x)
@@ -16,11 +16,11 @@ let heart_00_2x = new Image();/*ハートを置く所*/
 heart_00_2x.src = "images/heart_00@2x.png";
 let heart_2x  = new Image();/*ハート*/
 heart_2x.src  = "images/heart@2x.png";
-//ハート(1x)
-let heart_00 = new Image();/*ハートを置く所*/
-heart_00.src = "images/heart_00.png";
-let heart  = new Image();/*ハート*/
-heart.src  = "images/heart.png";
+// //ハート(1x)
+// let heart_00 = new Image();/*ハートを置く所*/
+// heart_00.src = "images/heart_00.png";
+// let heart  = new Image();/*ハート*/
+// heart.src  = "images/heart.png";
 
 
 //サルアイコン(2x)
@@ -30,13 +30,13 @@ let icon_02_2x = new Image();/*サルアイコン02*/
 icon_02_2x.src = "images/icon_02@2x.png";
 let icon_03_2x = new Image();/*サルアイコン03*/
 icon_03_2x.src = "images/icon_03@2x.png";
-/*サルアイコン(1x)*/
-let icon_01 = new Image();	 /*サルアイコン01*/
-icon_01.src = "images/icon_01.png";
-let icon_02 = new Image();   /*サルアイコン02*/
-icon_02.src = "images/icon_02.png";
-let icon_03 = new Image();   /*サルアイコン03*/
-icon_03.src = "images/icon_03.png";
+// /*サルアイコン(1x)*/
+// let icon_01 = new Image();	 /*サルアイコン01*/
+// icon_01.src = "images/icon_01.png";
+// let icon_02 = new Image();   /*サルアイコン02*/
+// icon_02.src = "images/icon_02.png";
+// let icon_03 = new Image();   /*サルアイコン03*/
+// icon_03.src = "images/icon_03.png";
 
 
 //背景(1x)
@@ -88,35 +88,35 @@ saru_close_s_l_2x.src   = "images/saru_02_shout_l@2x.png";
 let saru_close_d_l_2x = new Image();/*サル02ダウン*/
 saru_close_d_l_2x.src = "images/saru_02_down_l@2x.png";
 
-//サル本体(1x)
-/*腕を開く*/
-let saru_open 	= new Image();/*サル01*/
-saru_open.src 	= "images/saru_01.png";
-let saru_open_s = new Image();/*サル01叫び*/
-saru_open_s.src 	= "images/saru_01_shout.png";
-let saru_open_d = new Image();/*サル01ダウン*/
-saru_open_d.src 	= "images/saru_01_down.png";
-/*腕を開く(左向き)*/
-let saru_open_l 	= new Image();/*サル01*/
-saru_open_l.src 	= "images/saru_01_l.png";
-let saru_open_s_l = new Image();/*サル01叫び*/
-saru_open_s_l.src 	= "images/saru_01_shout_l.png";
-let saru_open_d_l = new Image();/*サル01ダウン*/
-saru_open_d_l.src 	= "images/saru_01_down_l.png";
-/*腕を閉じる*/
-let saru_close   = new Image();/*サル02*/
-saru_close.src   = "images/saru_02.png";
-let saru_close_s = new Image();/*サル02叫び*/
-saru_close_s.src   = "images/saru_02_shout.png";
-let saru_close_d = new Image();/*サル02ダウン*/
-saru_close_d.src = "images/saru_02_down.png";
-/*腕を閉じる(左向き)*/
-let saru_close_l   = new Image();/*サル02*/
-saru_close_l.src   = "images/saru_02_l.png";
-let saru_close_s_l = new Image();/*サル02叫び*/
-saru_close_s_l.src   = "images/saru_02_shout_l.png";
-let saru_close_d_l = new Image();/*サル02ダウン*/
-saru_close_d_l.src = "images/saru_02_down_l.png";
+// //サル本体(1x)
+// /*腕を開く*/
+// let saru_open 	= new Image();/*サル01*/
+// saru_open.src 	= "images/saru_01.png";
+// let saru_open_s = new Image();/*サル01叫び*/
+// saru_open_s.src 	= "images/saru_01_shout.png";
+// let saru_open_d = new Image();/*サル01ダウン*/
+// saru_open_d.src 	= "images/saru_01_down.png";
+// /*腕を開く(左向き)*/
+// let saru_open_l 	= new Image();/*サル01*/
+// saru_open_l.src 	= "images/saru_01_l.png";
+// let saru_open_s_l = new Image();/*サル01叫び*/
+// saru_open_s_l.src 	= "images/saru_01_shout_l.png";
+// let saru_open_d_l = new Image();/*サル01ダウン*/
+// saru_open_d_l.src 	= "images/saru_01_down_l.png";
+// /*腕を閉じる*/
+// let saru_close   = new Image();/*サル02*/
+// saru_close.src   = "images/saru_02.png";
+// let saru_close_s = new Image();/*サル02叫び*/
+// saru_close_s.src   = "images/saru_02_shout.png";
+// let saru_close_d = new Image();/*サル02ダウン*/
+// saru_close_d.src = "images/saru_02_down.png";
+// /*腕を閉じる(左向き)*/
+// let saru_close_l   = new Image();/*サル02*/
+// saru_close_l.src   = "images/saru_02_l.png";
+// let saru_close_s_l = new Image();/*サル02叫び*/
+// saru_close_s_l.src   = "images/saru_02_shout_l.png";
+// let saru_close_d_l = new Image();/*サル02ダウン*/
+// saru_close_d_l.src = "images/saru_02_down_l.png";
 
 
 //降ってくるオブジェクト(2x)
@@ -126,13 +126,13 @@ let item_02_2x = new Image();/*リンゴ*/
 item_02_2x.src = "images/item_02@2x.png";
 let item_03_2x = new Image();/*うんち*/
 item_03_2x.src = "images/item_03@2x.png";
-/*降ってくるオブジェクト(1x)*/
-let item_01 = new Image();/*バナナ*/
-item_01.src = "images/item_01.png";
-let item_02 = new Image();/*リンゴ*/
-item_02.src = "images/item_02.png";
-let item_03 = new Image();/*うんち*/
-item_03.src = "images/item_03.png";
+// /*降ってくるオブジェクト(1x)*/
+// let item_01 = new Image();/*バナナ*/
+// item_01.src = "images/item_01.png";
+// let item_02 = new Image();/*リンゴ*/
+// item_02.src = "images/item_02.png";
+// let item_03 = new Image();/*うんち*/
+// item_03.src = "images/item_03.png";
 
 
 /*その他(2x)*/
@@ -147,17 +147,17 @@ saru_girl_2x.src  		 = "images/saru_girl@2x.png";
 let saru_girl_l_2x		 = new Image();  /*サルガール(左向き)*/
 saru_girl_l_2x.src		 = "images/saru_girl_l@2x.png";
 
-/*その他(1x)*/
-let karasu_hyokkori = new Image();/*カラス（待機）*/
-karasu_hyokkori.src = "images/karasu_hyokkori.png";
-let karasu  		  	= new Image();/*カラス（飛行）*/
-karasu.src  				= "images/karasu.png";
-let butterfly  			= new Image();/*蝶々*/
-butterfly.src   		= "images/butterfly.png";
-let saru_girl  			= new Image();  /*サルガール(右向き)*/
-saru_girl.src   		= "images/saru_girl.png";
-let saru_girl_l 		= new Image();  /*サルガール(左向き)*/
-saru_girl_l.src 		= "images/saru_girl_l.png";
+// /*その他(1x)*/
+// let karasu_hyokkori = new Image();/*カラス（待機）*/
+// karasu_hyokkori.src = "images/karasu_hyokkori.png";
+// let karasu  		  	= new Image();/*カラス（飛行）*/
+// karasu.src  				= "images/karasu.png";
+// let butterfly  			= new Image();/*蝶々*/
+// butterfly.src   		= "images/butterfly.png";
+// let saru_girl  			= new Image();  /*サルガール(右向き)*/
+// saru_girl.src   		= "images/saru_girl.png";
+// let saru_girl_l 		= new Image();  /*サルガール(左向き)*/
+// saru_girl_l.src 		= "images/saru_girl_l.png";
 
 //GIFアニメ
 let saru_girl_d = new Image();/*サルガール*/
