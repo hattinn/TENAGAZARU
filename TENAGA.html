@@ -67,7 +67,7 @@ const SCREEN_H = BLOCK_H * FIELD_ROW;
 const ROPE_W = SCREEN_W;						   /*長さ   */
 const ROPE_H = SCREEN_W/50; 				   /*厚み   */
 const ROPE_X = 0;									     /*座標(x)*/
-const ROPE_Y = SCREEN_H/2 - BLOCK_H*2; /*座標()y*/
+const ROPE_Y = SCREEN_H/2 - BLOCK_H*2; /*座標(y)*/
 
 
 
@@ -183,7 +183,7 @@ const SARU_SPEED = BLOCK_W;						    /*サルの移動幅*/
 const SARU_W     = BLOCK_W*4;			  			/*横幅*/
 const SARU_H  	 = BLOCK_H*6;			  			/*縦幅*/
 const START_X 	 = SCREEN_W/2 - SARU_W/2; /*スタート位置x*/
-const START_Y 	 = ROPE_Y - 10;						/*スタート位置y*/
+const START_Y 	 = ROPE_Y-20;						/*スタート位置y*/
 let   saru_x  	 = 324;								/*サルの現在位置x*/
 let   saru_y  	 = START_Y;          			/*サルの現在位置y*/
 let   saru_t  	 = saruType[0][0];			 	/*サルのタイプ(初期値)*/
