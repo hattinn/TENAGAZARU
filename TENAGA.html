@@ -32,38 +32,139 @@
 <script src="data.js"></script>
 <script>
 /*--------------------共通設定-----------------------------------*/
-// let window_size = window.innerWidth;
-// const BLOCK_SIZE = window_size/10;
+
+//描画スピード
+let gameSpeed = 1000/30;
+//アイテムのドロップ間隔(ms)
+let repopTime = 1000;
+//落ちるスピード(ms)
+let dropSpeed = 400;
 
 //音
+se_unti.volume   = 0.3;
+se_banana.volume = 0.3;
 
 let bgm_01  		 = document.getElementById("bgm_01");   /*BGM01*/
-let se1_move 		 = document.getElementById("se_move");  /*サルの移動の音  */
-let se2_banana   = document.getElementById("se_banana");/*バナナゲット音*/
-let se3_unti  	 = document.getElementById("se_unti");  /*うんち登場の音  */
-
 let bgm = bgm_01;/*BGM初期値*/
 
-
+/*min~maxの乱数獲得ファンクション*/
+function rand(min,max){return Math.floor(Math.random()*(min,max)+1)+min}
 
 //フィールドサイズ
 const FIELD_COL = 10;
 const FIELD_ROW = 20;
 
 //ブロック一つのサイズ
-const BLOCK_SIZE_W = 108;
-const BLOCK_SIZE_H =  96;
+const BLOCK_W = 108;
+const BLOCK_H =  96;
 
 //スクリーンサイズ
-const SCREEN_W = BLOCK_SIZE_W * FIELD_COL;
-const SCREEN_H = BLOCK_SIZE_H * FIELD_ROW;
+const SCREEN_W = BLOCK_W * FIELD_COL;
+const SCREEN_H = BLOCK_H * FIELD_ROW;
 
 
 //ロープの設定
-const ROPE_W = SCREEN_W;		/*長さ*/
-const ROPE_H = SCREEN_W/25; /*厚み*/
-const ROPE_X = 0;						/*x座標*/
-const ROPE_Y = SCREEN_H/2 - BLOCK_SIZE_H*2;/*y座標*/
+const ROPE_W = SCREEN_W;						   /*長さ   */
+const ROPE_H = SCREEN_W/25; 				   /*厚み   */
+const ROPE_X = 0;									     /*座標(x)*/
+const ROPE_Y = SCREEN_H/2 - BLOCK_H*2; /*座標()y*/
+
+
+
+//オブジェクト共通
+// let erase = false;
+//-----------------------落ちてくるオブジェクトの設定---------
+let objType   = [item_01_2x,item_02_2x,item_03_2x];
+let randNum;  /*0~9の乱数が入る*/
+
+// const OBJ_START_X = rand(0,10) * OBJ_W;/*スタート位置(ランダム)*/
+// const OBJ_START_Y = 0;
+// let obj_x = OBJ_START_X;/*現在位置*/
+// let obj_y = 0;
+
+/*落ちてくるオブジェクトの基本クラス*/
+class Obj
+{
+	constructor()
+	{
+		this.t  = rand(0,10);/*種類*/
+		this.x  = (rand(0,10) -1) * BLOCK_W;
+		this.y  = 0;
+		this.vy = BLOCK_H;/*移動距離*/
+		this.w  = BLOCK_W;
+		this.h  = BLOCK_H;
+		this.erase = false;
+	}
+	
+	draw()
+	{
+		if(this.t===10)ctxPlay.drawImage( objType[2], this.x, this.y , this.w, this.h*2 );
+		else if(this.t===8 || this.t===9)ctxPlay.drawImage( objType[1], this.x, this.y , this.w, this.h );
+		else ctxPlay.drawImage( objType[0], this.x, this.y , this.w, this.h );
+	}
+	
+	update()
+	{
+		if(this.y >= SCREEN_H)
+		{
+			this.erase = true;
+			return;
+		}
+		
+		// 落下オブジェクトに対するヒット確認
+		if(
+			( (this.y>=627 && this.y<=1248)   &&
+			(((this.x===0   || this.x===108   || this.x===324) && saru_x===0  ) ||
+			 ((this.x===648 || this.x===864   || this.x===972) && saru_x===648) ||
+			 ((this.x===108 || this.x===432)  && saru_x===108) ||
+			 ((this.x===540 || this.x===864)  && saru_x===540) ||
+			 ((this.x===324 || this.x===648)  && saru_x===324) ||
+			 ((this.x===216 || this.x===432   || this.x===540) && (saru_x===216 &&  dir_r)) ||
+			 ((this.x===432 || this.x===648   || this.x===756) && (saru_x===432 &&  dir_r)) ||
+			 ((this.x===216 || this.x===324   || this.x===540) && (saru_x===216 && !dir_r)) ||
+			 ((this.x===432 || this.x===540   || this.x===756) && (saru_x===432 && !dir_r)))  )
+			||
+			( (this.y >=960 && this.y <=1248) &&
+			 ((this.x >=0   && this.x <=324   && saru_x === 0)   	||
+			  (this.x >=108 && this.x <=432   && saru_x === 108) 	||
+			  (this.x >=216 && this.x <=540   && saru_x === 216) 	||
+			  (this.x >=324 && this.x <=648   && saru_x === 324) 	||
+			  (this.x >=432 && this.x <=756   && saru_x === 432) 	||
+			  (this.x >=540 && this.x <=864   && saru_x === 540)   ||
+			  (this.x >=648 && this.x <=972   && saru_x === 648)   ||
+			  (this.x >=756 && this.x <=1080  && saru_x === 756)))
+			 )
+		{
+			this.erase = true;
+			if(this.t===10)hitUnti();
+			else if(this.t===8 || this.t===9)getApple();
+			else getBanana();
+		}
+	}/*〆update()〆*/
+	
+	moveObj(){this.y += this.vy;}
+	
+}
+
+let obj = [ new Obj() ];
+
+function hitUnti()
+{
+	se_unti.currentTime = 0;
+	se_unti.play();
+}
+function getApple()
+{
+	se_banana.currentTime = 0;
+	se_move.play();
+}
+function getBanana()
+{
+	se_banana.currentTime = 0;
+	se_move.play();
+	
+}
+
 
 
 
@@ -72,22 +173,21 @@ const ROPE_Y = SCREEN_H/2 - BLOCK_SIZE_H*2;/*y座標*/
 let saruType =
 [
 	/*     平常心,          叫び,      ダウン*/
-	["saru_open_2x"    ,"saru_open_s_2x"    ,"saru_open_d_2x"   ],/*[0]腕を開く*/
-	["saru_open_l_2x"  ,"saru_open_s_l_2x"  ,"saru_open_d_l_2x" ],/*[0]腕を開く(左向き)*/
-	["saru_close_2x"   ,"saru_close_s_2x"   ,"saru_close_d_2x"  ],/*[1]腕を閉じる*/
-	["saru_close_l_2x" ,"saru_close_s_l_2x" ,"saru_close_d_l_2x"] /*[1]腕を閉じる(左向き)*/
+	[saru_open_2x    ,saru_open_s_2x    ,saru_open_d_2x   ],/*[0]腕を開く  (右向き) */
+	[saru_close_2x   ,saru_close_s_2x   ,saru_close_d_2x  ],/*[1]腕を閉じる(右向き)	*/
+	[saru_open_l_2x  ,saru_open_s_l_2x  ,saru_open_d_l_2x ],/*[2]腕を開く  (左向き) */
+	[saru_close_l_2x ,saru_close_s_l_2x ,saru_close_d_l_2x] /*[3]腕を閉じる(左向き) */
 ]
 
-const SARU_SPEED = BLOCK_SIZE_W;			/*サルの移動幅*/
-const SARU_W = BLOCK_SIZE_W*4;			  /*横幅*/
-const SARU_H = BLOCK_SIZE_H*6;			  /*縦幅*/
-const START_X = SCREEN_W/2 - SARU_W/2;/*スタート位置x*/
-const START_Y = ROPE_Y - 10;					/*スタート位置y*/
-let   saru_x = START_X;								/*サルの現在位置x*/
-let   saru_y = START_Y;          			/*サルの現在位置y*/
-let   saru_t = saruType[0][0];			 	/*サルのタイプ(初期値)*/
-
-
+const SARU_SPEED = BLOCK_W;						    /*サルの移動幅*/
+const SARU_W     = BLOCK_W*4;			  			/*横幅*/
+const SARU_H  	 = BLOCK_H*6;			  			/*縦幅*/
+const START_X 	 = SCREEN_W/2 - SARU_W/2; /*スタート位置x*/
+const START_Y 	 = ROPE_Y - 10;						/*スタート位置y*/
+let   saru_x  	 = 324;								/*サルの現在位置x*/
+let   saru_y  	 = START_Y;          			/*サルの現在位置y*/
+let   saru_t  	 = saruType[0][0];			 	/*サルのタイプ(初期値)*/
+let   dir_r      = true;
 
 //----------------ゲームヘッダーの設定-----------------------
 let canHead = document.getElementById("can-head");
@@ -96,36 +196,43 @@ ctxHead.imageSmoothingEnabled = false;/*画質改善*/
 /*キャンバスサイズ*/
 canHead.width  = SCREEN_W;
 canHead.height = SCREEN_H/5;
+
+/*サルアイコン*/
+let   iconType = [icon_01_2x,icon_02_2x,icon_03_2x]/*1.通常 2.叫び 3.ダウン*/
+let   icon_t   = iconType[0];
+const ICON_X   = BLOCK_W - (BLOCK_W * 2)/3;
+const ICON_Y 	 = BLOCK_H - (BLOCK_H * 2)/4;
+const ICON_W   = BLOCK_W * 2.6;
+const ICON_H   = BLOCK_H * 2.6;
 /*ハートの位置(横、左から順)*/
-const HEART_POSITION_X_1 = BLOCK_SIZE_W * 3;  /*1.(画面左から順)*/
-const HEART_POSITION_X_2 = BLOCK_SIZE_W * 3.8;/*2.*/
-const HEART_POSITION_X_3 = BLOCK_SIZE_W * 4.6;/*3.*/
-const HEART_POSITION_X_4 = BLOCK_SIZE_W * 5.4;/*4.*/
-const HEART_POSITION_X_5 = BLOCK_SIZE_W * 6.2;/*5.*/
+const HEART_X1 = BLOCK_W * 3;  /*1.(画面左から順)*/
+const HEART_X2 = BLOCK_W * 3.8;/*2.*/
+const HEART_X3 = BLOCK_W * 4.6;/*3.*/
+const HEART_X4 = BLOCK_W * 5.4;/*4.*/
+const HEART_X5 = BLOCK_W * 6.2;/*5.*/
 /*ハートの位置(縦)*/
-const HEART_POSITION_Y   = BLOCK_SIZE_H - (BLOCK_SIZE_H * 2)/4;/*縦位置*/
+const HEART_Y   = BLOCK_H - (BLOCK_H * 2)/4;/*縦位置*/
 
 /*ハートの種類*/
-let heartType = ["heart_00_2x","heart_2x"]/*[0]が器,[1]がハート*/
+let heartType = [heart_00_2x,heart_2x]/*[0]器,[1]ハート*/
 let heart_t = heartType[1];
 
-
 // heart_00.onload = function()
-// { ctxHead.drawImage(heart_00_2x, HEART_POSITION_X_1, HEART_POSITION_Y, BLOCK_SIZE_W, BLOCK_SIZE_H);
-//   ctxHead.drawImage(heart_00_2x, HEART_POSITION_X_2, HEART_POSITION_Y, BLOCK_SIZE_W, BLOCK_SIZE_H);
-//   ctxHead.drawImage(heart_00_2x, HEART_POSITION_X_3, HEART_POSITION_Y, BLOCK_SIZE_W, BLOCK_SIZE_H);
-//   ctxHead.drawImage(heart_00_2x, HEART_POSITION_X_4, HEART_POSITION_Y, BLOCK_SIZE_W, BLOCK_SIZE_H);
-//   ctxHead.drawImage(heart_00_2x, HEART_POSITION_X_5, HEART_POSITION_Y, BLOCK_SIZE_W, BLOCK_SIZE_H);
+// { ctxHead.drawImage(heart_00_2x, HEART_X1, HEART_Y, BLOCK_W, BLOCK_H);
+//   ctxHead.drawImage(heart_00_2x, HEART_X2, HEART_Y, BLOCK_W, BLOCK_H);
+//   ctxHead.drawImage(heart_00_2x, HEART_X3, HEART_Y, BLOCK_W, BLOCK_H);
+//   ctxHead.drawImage(heart_00_2x, HEART_X4, HEART_Y, BLOCK_W, BLOCK_H);
+//   ctxHead.drawImage(heart_00_2x, HEART_X5, HEART_Y, BLOCK_W, BLOCK_H);
 // }
 
 
 
 //----------------背景の設定----------------------------------
 let canBg   = document.getElementById("can-bg");
-// let ctxBg	 = canBg.getContext("2d");
 /*キャンバスサイズ*/
 canBg.width  = SCREEN_W;
 canBg.height = SCREEN_H;
+
 
 //----------------プレイ画面の設定----------------------------
 let canPlay   = document.getElementById("can-play");
@@ -135,89 +242,147 @@ ctxPlay.imageSmoothingEnabled = false;/*画質改善*/
 canPlay.width  = SCREEN_W;
 canPlay.height = SCREEN_H;
 
-
 //***********↑↑基本設定ココまで↑↑*********************************************
 
-/////////////////////ヘッダー////////////////////////
-
-
-
+/////////////////////ヘッダー//////////////////////////
 /////////////////////プレイ画面////////////////////////
 
-
-
-function draw(){
-	if(saru_t == saruType[0][0])
+function gameLoop()
+{
+	ctxPlay.clearRect( 0, 0, SCREEN_W, SCREEN_H );
+	// ctxPlay.clearRect( saru_x , saru_y, SARU_W, SARU_H );
+	ctxPlay.drawImage( rope_2x, ROPE_X, ROPE_Y, ROPE_W, ROPE_H );
+	ctxPlay.drawImage( saru_t, saru_x, saru_y, SARU_W, SARU_H );
+	
+	for(let i =obj.length -1 ;i>=0;i--)
 	{
-		saru_t = saruType[0][1];
-		ctxPlay.drawImage( saru_close_2x, saru_x, saru_y, SARU_W, SARU_H );
-	}else if(saru_t == saruType[0][1])
+		if(obj[i].erase)
+		{
+			obj.splice(i,1);
+		}
+	}
+	
+	//描画の処理
+	for( let i=0 , len=obj.length ; i<len ; i++ )
 	{
-		saru_t = saruType[0][0];
-		ctxPlay.drawImage( saru_open_2x, saru_x, saru_y, SARU_W, SARU_H );
+		obj[i].draw();
+	}
+	
+	for( let i=0 ,len = obj.length ; i<len; i++ )
+	{
+			obj[i].update();
 	}
 }
-//----------------操作処理--------------------------------
-// let lbutton   = document.getElementById("left");
 
+
+
+
+
+//----------------操作処理-------------------------------------------------------
+// スマホ
+let tapLeft   = document.getElementById( "left"  );
+let tapRight  = document.getElementById( "right" );
+tapLeft.addEventListener(  "touchstart", touchLeft  ,{passive:false},{once:true});
+tapRight.addEventListener( "touchstart", touchRight ,{passive:false},{once:true});
+
+/* タップ操作の処理 */
+function touchLeft(e)
+{
+  e.preventDefault();
+  // bgm.currentTime = 0;
+  bgm.play();
+	// if(over)return;
+  if(saru_x <= 0)return;/*移動制限*/
+  se_banana.currentTime = 0;
+	se_banana.play();
+  ctxPlay.clearRect( saru_x, saru_y, SARU_W, SARU_H );
+  dir_r = false;
+	saru_x -=SARU_SPEED;
+	((saru_t === saruType[0][0]) || (saru_t === saruType[2][0])) ? saru_t = saruType[3][0] : saru_t = saruType[2][0];
+	gameLoop();
+}
+function touchRight(e)
+{
+  e.preventDefault();
+  // bgm.currentTime = 0;
+  bgm.play();
+	// if(over)return;
+  if(saru_x >= ( SCREEN_W - SARU_W ))return;/*移動制限*/
+  se_banana.currentTime = 0;
+	se_banana.play();
+  ctxPlay.clearRect( saru_x, saru_y, SARU_W, SARU_H );
+  dir_r = true;
+	saru_x +=SARU_SPEED;
+	((saru_t === saruType[0][0]) || (saru_t === saruType[2][0])) ? saru_t = saruType[1][0] : saru_t = saruType[0][0];
+	gameLoop();
+}
+   
+//PC
 //キーボードが押された時の処理
 document.onkeydown = function(e)
 {
 	// bgm.currentTime = 0;
-	// bgm.play();
+	bgm.play();
 	// if(over)return;
 	if( e.keyCode == 37 )
 	{
-		ctxPlay.clearRect(saru_x,saru_y, SARU_W, SARU_H );
-		ctxPlay.drawImage( rope_2x, ROPE_X, ROPE_Y, ROPE_W, ROPE_H );
+		if(saru_x <= 0)return;/*移動制限*/
+		se_banana.currentTime = 0;
+		se_banana.play();
+		ctxPlay.clearRect( saru_x, saru_y, SARU_W, SARU_H );
+		dir_r = false;
 		saru_x -=SARU_SPEED;
-		draw();
-		se_banana.currentTime = 0;
-		se_banana.play();
-		// if( checkMove( -1, 0 ) )
+		((saru_t === saruType[0][0]) || (saru_t === saruType[2][0])) ? saru_t = saruType[3][0] : saru_t = saruType[2][0];
+		gameLoop();
 	}else if( e.keyCode == 39){
-		ctxPlay.clearRect(saru_x,saru_y, SARU_W, SARU_H );
-		ctxPlay.drawImage( rope_2x, ROPE_X, ROPE_Y, ROPE_W, ROPE_H );
-		saru_x +=SARU_SPEED;
-		draw();
+		if(saru_x >= ( SCREEN_W - SARU_W ))return;/*移動制限*/
 		se_banana.currentTime = 0;
 		se_banana.play();
-		// if( checkMove(  1, 0 ) )
+		ctxPlay.clearRect( saru_x, saru_y, SARU_W, SARU_H );
+		dir_r = true;
+		saru_x +=SARU_SPEED;
+		((saru_t === saruType[0][0]) || (saru_t === saruType[2][0])) ? saru_t = saruType[1][0] : saru_t = saruType[0][0];
+		gameLoop();
 	}
 }
+//----------------↑操作処理↑ココまで-------------------------------------------------------
 
-init();
-
+//初期化
 function init()
 {
+	
 	//サルを初期化
-	saru_open_2x.onload = function()
-	{ctxPlay.drawImage( saru_open_2x, saru_x, saru_y, SARU_W, SARU_H );}
+	saru_t.onload = function(){ctxPlay.drawImage( saru_t, saru_x, saru_y, SARU_W, SARU_H );}
 	
 	//ロープを初期化
-	rope_2x.onload = function()
-	{
-		ctxPlay.drawImage( rope_2x, ROPE_X, ROPE_Y, ROPE_W, ROPE_H );
-	}
+	rope_2x.onload = function(){ctxPlay.drawImage( rope_2x, ROPE_X, ROPE_Y, ROPE_W, ROPE_H );}
 	
 	//サルアイコンを初期化
-	icon_01_2x.onload = function()
-	{
-		ctxHead.drawImage(icon_01_2x, BLOCK_SIZE_W - (BLOCK_SIZE_W * 2)/3, BLOCK_SIZE_H - (BLOCK_SIZE_H * 2)/4, BLOCK_SIZE_W * 2.6, BLOCK_SIZE_H * 2.6);
-	}
+	icon_t.onload = function(){ctxHead.drawImage( icon_t, ICON_X, ICON_Y, ICON_W, ICON_H);}
+	
 	//ハートを初期化
-	heart_2x.onload = function()
+	heart_t.onload = function()
 	{
-		ctxHead.drawImage(heart_2x, HEART_POSITION_X_1, HEART_POSITION_Y, BLOCK_SIZE_W, BLOCK_SIZE_H);
-	  ctxHead.drawImage(heart_2x, HEART_POSITION_X_2, HEART_POSITION_Y, BLOCK_SIZE_W, BLOCK_SIZE_H);
-	  ctxHead.drawImage(heart_2x, HEART_POSITION_X_3, HEART_POSITION_Y, BLOCK_SIZE_W, BLOCK_SIZE_H);
-	  ctxHead.drawImage(heart_2x, HEART_POSITION_X_4, HEART_POSITION_Y, BLOCK_SIZE_W, BLOCK_SIZE_H);
-	  ctxHead.drawImage(heart_2x, HEART_POSITION_X_5, HEART_POSITION_Y, BLOCK_SIZE_W, BLOCK_SIZE_H);
+		ctxHead.drawImage(heart_t, HEART_X1, HEART_Y, BLOCK_W, BLOCK_H);
+	  ctxHead.drawImage(heart_t, HEART_X2, HEART_Y, BLOCK_W, BLOCK_H);
+	  ctxHead.drawImage(heart_t, HEART_X3, HEART_Y, BLOCK_W, BLOCK_H);
+	  ctxHead.drawImage(heart_t, HEART_X4, HEART_Y, BLOCK_W, BLOCK_H);
+	  ctxHead.drawImage(heart_t, HEART_X5, HEART_Y, BLOCK_W, BLOCK_H);
 	}
-	//サルの位置を初期化
-	saru_x = START_X;
-	saru_y = START_Y;
 }
+
+
+
+
+init();
+setInterval(gameLoop, gameSpeed);
+setInterval( function(){ obj.push( new Obj());} , repopTime );
+setInterval( function()
+	{
+		for( let i=0 , len=obj.length ; i<len ; i++ )
+		obj[i].moveObj();
+	},dropSpeed);
+
 
 </script>
 </body>
