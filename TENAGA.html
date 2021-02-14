@@ -21,28 +21,32 @@
 		<button id="left" class="left"></button>
 		<button id="right" class="right"></button>
 	</div>
+	
+	<span id="bnn-ef" class="none">banana</span>
+	
 </div>
 
 <audio id="bgm_01"    src="sound/bgm_01.mp3" autoplay></audio>
 <audio id="se_move"   src="sound/move.mp3"></audio>
-<audio id="se_banana" src="sound/banana.mp3"></audio>
-<audio id="se_unti"   src="sound/unti.mp3"></audio>
+<audio id="se_scream" src="sound/down.mp3"></audio>
+<audio id="se_banana" src="sound/banana_01.mp3"></audio>
+<audio id="se_apple"  src="sound/apple.mp3"></audio>
+<audio id="se_unti"   src="sound/unti_01.mp3"></audio>
 
 
 <script src="data.js"></script>
-<script>
+<script defer>
 /*--------------------共通設定-----------------------------------*/
-
 //描画スピード
-let gameSpeed = 1000/30;
-//アイテムのドロップ間隔(ms)
+let gameSpeed = 1000/60;
+//アイテムの再ドロップ間隔(ms)
 let repopTime = 1000;
 //落ちるスピード(ms)
 let dropSpeed = 400;
 
 //音
-se_unti.volume   = 0.3;
-se_banana.volume = 0.3;
+// se_unti.volume   = 0.3;
+// se_banana.volume = 0.3;
 
 let bgm_01  		 = document.getElementById("bgm_01");   /*BGM01*/
 let bgm = bgm_01;/*BGM初期値*/
@@ -62,25 +66,25 @@ const BLOCK_H =  96;
 const SCREEN_W = BLOCK_W * FIELD_COL;
 const SCREEN_H = BLOCK_H * FIELD_ROW;
 
-
 //ロープの設定
-const ROPE_W = SCREEN_W;						   /*長さ   */
-const ROPE_H = SCREEN_W/50; 				   /*厚み   */
-const ROPE_X = 0;									     /*座標(x)*/
-const ROPE_Y = SCREEN_H/2 - BLOCK_H*2; /*座標(y)*/
+const ROPE_W = SCREEN_W;   /*長さ   */
+const ROPE_H = SCREEN_W/50;/*厚み   */
+let rope_x = 0;						 /*座標(x)*/
+let rope_y = SCREEN_H/2 - BLOCK_H*2;/*座標(y)*/
 
-
+//ゲームオーバーフラグ
+let over;
+let loopStop;
+//ステージクリアフラグ
+let stageClear;
+let maxBanana  = 10;/*目標バナナ数（達成でステージクリア）*/
+let maxLife    =  5;
+let currentLife;
 
 //オブジェクト共通
-// let erase = false;
 //-----------------------落ちてくるオブジェクトの設定---------
-let objType   = [item_01_2x,item_02_2x,item_03_2x];
-let randNum;  /*0~9の乱数が入る*/
-
-// const OBJ_START_X = rand(0,10) * OBJ_W;/*スタート位置(ランダム)*/
-// const OBJ_START_Y = 0;
-// let obj_x = OBJ_START_X;/*現在位置*/
-// let obj_y = 0;
+let objType = [item_01_2x,item_02_2x,item_03_2x];
+let bnnEf   = document.getElementById('bnn-ef');/*バナナ取得時のエフェクト専用要素*/
 
 /*落ちてくるオブジェクトの基本クラス*/
 class Obj
@@ -98,8 +102,8 @@ class Obj
 	
 	draw()
 	{
-		if(this.t===10)ctxPlay.drawImage( objType[2], this.x, this.y , this.w, this.h*2 );
-		else if(this.t===8 || this.t===9)ctxPlay.drawImage( objType[1], this.x, this.y , this.w, this.h );
+		if(this.t===10 || this.t===9)ctxPlay.drawImage( objType[2], this.x, this.y , this.w, this.h*2 );
+		else if(this.t===8)ctxPlay.drawImage( objType[1], this.x, this.y , this.w, this.h );
 		else ctxPlay.drawImage( objType[0], this.x, this.y , this.w, this.h );
 	}
 	
@@ -110,7 +114,7 @@ class Obj
 			this.erase = true;
 			return;
 		}
-		
+		if(over){return;}
 		// 落下オブジェクトに対するヒット確認
 		if(
 			( (this.y>=627 && this.y<=1248)   &&
@@ -136,8 +140,8 @@ class Obj
 			 )
 		{
 			this.erase = true;
-			if(this.t===10)hitUnti();
-			else if(this.t===8 || this.t===9)getApple();
+			if(this.t===10 || this.t===9)hitUnti();
+			else if(this.t===8)getApple();
 			else getBanana();
 		}
 	}/*〆update()〆*/
@@ -146,33 +150,201 @@ class Obj
 	
 }
 
-let obj = [ new Obj() ];
+let obj=[];/*落下オブジェクトの配列*/
+let hit;/*サルがダメージをウケている最中か*/
 
 function hitUnti()
 {
+	
+	if(currentLife > 1)
+	{
+		icon_t=iconType[1];/*ウンチをくらったリアクション(アイコン)*/
+		setTimeout( function(){icon_t=iconType[0];},400)/*リアクション時間*/
+	}
+	if(currentLife > 0)
+	{
+		currentLife--;
+		switch(currentLife)
+		{
+			case 4: heart_5t = heartType[0];
+				break;
+			case 3: heart_4t = heartType[0];
+				break;
+			case 2: heart_3t = heartType[0];
+				break;
+			case 1: heart_2t = heartType[0];
+				break;
+			case 0: heart_1t = heartType[0];over=true;
+				break;
+		}
+		
+		
+	}
+	if(!over)
+	{
+		/*ウンチをくらったリアクション(本体)*/
+		switch(saru_t)
+		{
+			case saru_open_2x   :hit=true;
+													 saru_t=saruType[0][1];
+												   setTimeout( function()
+													 {
+													 	hit=false;
+													 	saru_t=saru_open_2x;
+													 },300);
+												   break;
+			case saru_close_2x  :hit=true;
+													 saru_t=saruType[1][1];
+													 setTimeout( function()
+													 {
+													 	hit=false;
+													 	saru_t=saru_close_2x;
+												 　},300);
+													 break;
+			case saru_open_l_2x :hit=true;
+													 saru_t=saruType[2][1];
+													 setTimeout( function()
+													 {
+													 	hit=false;
+													 	saru_t=saru_open_l_2x;
+													 },300);
+													 break;
+			case saru_close_l_2x:hit=true;
+													 saru_t=saruType[3][1];
+													 setTimeout( function()
+													 {
+													 	hit=false;
+													 	saru_t=saru_close_l_2x;
+													 },300);
+													 break;
+		}
+	}
+	// se_scream.currentTime = 0;
+	// se_scream.play();
 	se_unti.currentTime = 0;
 	se_unti.play();
-}
-function getApple()
-{
-	se_banana.currentTime = 0;
-	se_move.play();
-}
-function getBanana()
-{
-	se_banana.currentTime = 0;
-	se_move.play();
+	
+	if(over)
+	{
+		icon_t=iconType[2];
+		/*やられアクション(本体)*/
+		switch(saru_t)
+		{
+			case saru_open_2x   :hit=true;
+													 saru_t=saruType[0][2];
+												   setTimeout(downAnimA,300)
+												   break;
+												   
+			case saru_close_2x  :hit=true;
+													 saru_t=saruType[1][2];
+													 setTimeout(downAnimA,300)
+													 break;
+													 
+			case saru_open_l_2x :hit=true;
+													 saru_t=saruType[2][2];
+													 setTimeout(downAnimA,300)
+													 break;
+													 
+			case saru_close_l_2x:hit=true;
+													 saru_t=saruType[3][2];
+													 setTimeout(downAnimA,300)
+													 break;
+		}
+	}
 	
 }
 
+function downAnimA()
+{
+	board_l.classList.add('leave-l');/*キー操作の看板が逃げるアニメーション*/
+	board_r.classList.add('leave-r');
+	
+	setInterval(function(){
+			if(rope_y < SCREEN_H)rope_y+=200;/*ロープが落ちる*/
+		},100)
+	setInterval( function(){
+		if(saru_y > 400){saru_y-=200;}/*サルが浮く*/
+	  else {setTimeout(downAnimB,600);return;}
+	},100);
+	
+}
+function downAnimB()
+{
+	setInterval(  function(){
+		if(saru_y < SCREEN_H+SARU_H)
+		saru_y+=100;/*サルが落ちる*/
+	},10);
+	// se_scream.play();
+	// setTimeout( gameover,3000);
+}
 
 
 
-//-----------------------サルの設定---------------------------
+
+
+function getApple()
+{
+	count_a++;
+	se_apple.currentTime = 0;
+	se_apple.play();
+}
+function getBanana()
+{
+	count_b++;
+	switch(saru_x)
+	{
+		case   0:bnnEf.classList.remove('none');bnnEf.classList.add('bnn-ef1');
+						 setTimeout( function()
+						 {bnnEf.classList.remove('bnn-ef1');
+						 },800);
+						 break;
+		case 108:bnnEf.classList.remove('none');bnnEf.classList.add('bnn-ef2');
+						 setTimeout( function()
+						 {bnnEf.classList.remove('bnn-ef2');
+						 },800);
+						 break;
+		case 216:bnnEf.classList.remove('none');bnnEf.classList.add('bnn-ef3');
+						 setTimeout( function()
+						 {bnnEf.classList.remove('bnn-ef3');
+						 },800);
+						 break;
+		case 324:bnnEf.classList.remove('none');bnnEf.classList.add('bnn-ef4');
+						 setTimeout( function()
+						 {bnnEf.classList.remove('bnn-ef4');
+						 },800);
+						 break;
+		case 432:bnnEf.classList.remove('none');bnnEf.classList.add('bnn-ef5');
+						 setTimeout( function()
+						 {bnnEf.classList.remove('bnn-ef5');
+						 },800);
+						 break;
+		case 540:bnnEf.classList.remove('none');bnnEf.classList.add('bnn-ef6');
+						 setTimeout( function()
+						 {bnnEf.classList.remove('bnn-ef6');
+						 },800);
+						 break;
+		case 648:bnnEf.classList.remove('none');bnnEf.classList.add('bnn-ef7');
+						 setTimeout( function()
+						 {bnnEf.classList.remove('bnn-ef7');
+						 },800);
+						 break;
+	}
+	setTimeout( function()
+	{
+		bnnEf.classList.add('none');
+	},500);
+	se_banana.currentTime = 0;
+	se_banana.play();
+	
+	if(count_b === maxBanana)stageClear=true;
+}
+
+
+//-----------------------サルの設定------------------------------------------------
 /*サルの画像タイプ*/
 let saruType =
 [
-	/*     平常心,          叫び,      ダウン*/
+	/*  平常心,            叫び,             ダウン      */
 	[saru_open_2x    ,saru_open_s_2x    ,saru_open_d_2x   ],/*[0]腕を開く  (右向き) */
 	[saru_close_2x   ,saru_close_s_2x   ,saru_close_d_2x  ],/*[1]腕を閉じる(右向き)	*/
 	[saru_open_l_2x  ,saru_open_s_l_2x  ,saru_open_d_l_2x ],/*[2]腕を開く  (左向き) */
@@ -183,11 +355,11 @@ const SARU_SPEED = BLOCK_W;						    /*サルの移動幅*/
 const SARU_W     = BLOCK_W*4;			  			/*横幅*/
 const SARU_H  	 = BLOCK_H*6;			  			/*縦幅*/
 const START_X 	 = SCREEN_W/2 - SARU_W/2; /*スタート位置x*/
-const START_Y 	 = ROPE_Y-20;						/*スタート位置y*/
-let   saru_x  	 = 324;								/*サルの現在位置x*/
-let   saru_y  	 = START_Y;          			/*サルの現在位置y*/
-let   saru_t  	 = saruType[0][0];			 	/*サルのタイプ(初期値)*/
-let   dir_r      = true;
+const START_Y 	 = rope_y-20;						/*スタート位置y*/
+let   saru_x;/*サル本体の現在位置x*/
+let   saru_y;/*サル本体の現在位置y*/
+let   saru_t;/*サルのタイプ*/
+let   dir_r = true;/*サルの向きが右か(左ならfalseが入る)*/
 
 //----------------ゲームヘッダーの設定-----------------------
 let canHead = document.getElementById("can-head");
@@ -196,35 +368,33 @@ ctxHead.imageSmoothingEnabled = false;/*画質改善*/
 /*キャンバスサイズ*/
 canHead.width  = SCREEN_W;
 canHead.height = SCREEN_H/5;
+let score  ;/*トータル点数*/
+let count_b;/*バナナ入手数*/
+let count_a;/*リンゴ入手数*/
+
 
 /*サルアイコン*/
 let   iconType = [icon_01_2x,icon_02_2x,icon_03_2x]/*1.通常 2.叫び 3.ダウン*/
-let   icon_t   = iconType[0];
-const ICON_X   = BLOCK_W - (BLOCK_W * 2)/3;
+let   icon_t;
+const ICON_X   = BLOCK_W - (BLOCK_W * 2)/3 - 5;
 const ICON_Y 	 = BLOCK_H - (BLOCK_H * 2)/4;
 const ICON_W   = BLOCK_W * 2.6;
 const ICON_H   = BLOCK_H * 2.6;
 /*ハートの位置(横、左から順)*/
-const HEART_X1 = BLOCK_W * 3;  /*1.(画面左から順)*/
-const HEART_X2 = BLOCK_W * 3.8;/*2.*/
-const HEART_X3 = BLOCK_W * 4.6;/*3.*/
-const HEART_X4 = BLOCK_W * 5.4;/*4.*/
-const HEART_X5 = BLOCK_W * 6.2;/*5.*/
+const HEART_X1 = BLOCK_W * 3.4;  /*1.(画面左から順)*/
+const HEART_X2 = BLOCK_W * 4.2;/*2.*/
+const HEART_X3 = BLOCK_W * 5;/*3.*/
+const HEART_X4 = BLOCK_W * 5.8;/*4.*/
+const HEART_X5 = BLOCK_W * 6.6;/*5.*/
 /*ハートの位置(縦)*/
 const HEART_Y   = BLOCK_H - (BLOCK_H * 2)/4;/*縦位置*/
-
 /*ハートの種類*/
 let heartType = [heart_00_2x,heart_2x]/*[0]器,[1]ハート*/
-let heart_t = heartType[1];
-
-// heart_00.onload = function()
-// { ctxHead.drawImage(heart_00_2x, HEART_X1, HEART_Y, BLOCK_W, BLOCK_H);
-//   ctxHead.drawImage(heart_00_2x, HEART_X2, HEART_Y, BLOCK_W, BLOCK_H);
-//   ctxHead.drawImage(heart_00_2x, HEART_X3, HEART_Y, BLOCK_W, BLOCK_H);
-//   ctxHead.drawImage(heart_00_2x, HEART_X4, HEART_Y, BLOCK_W, BLOCK_H);
-//   ctxHead.drawImage(heart_00_2x, HEART_X5, HEART_Y, BLOCK_W, BLOCK_H);
-// }
-
+let heart_1t;
+let heart_2t;
+let heart_3t;
+let heart_4t;
+let heart_5t;
 
 
 //----------------背景の設定----------------------------------
@@ -241,60 +411,77 @@ ctxPlay.imageSmoothingEnabled = false;/*画質改善*/
 /*キャンバスサイズ*/
 canPlay.width  = SCREEN_W;
 canPlay.height = SCREEN_H;
-
 //***********↑↑基本設定ココまで↑↑*********************************************
 
-/////////////////////ヘッダー//////////////////////////
-/////////////////////プレイ画面////////////////////////
 
-function gameLoop()
+
+/////////////////////ヘッダー//////////////////////////
+//スコア計算ファンクション
+function  getScore(){score = count_b*100 + count_a*500}
+//スコア描画ファンクション
+function drawScore()
 {
-	ctxPlay.clearRect( 0, 0, SCREEN_W, SCREEN_H );
-	// ctxPlay.clearRect( saru_x , saru_y, SARU_W, SARU_H );
-	ctxPlay.drawImage( rope_2x, ROPE_X, ROPE_Y, ROPE_W, ROPE_H );
-	ctxPlay.drawImage( saru_t, saru_x, saru_y, SARU_W, SARU_H );
+	getScore();
+	let s = "score";
+	ctxHead.font = " 100px 'ＭＳ ゴシック'";
+	let w = ctxHead.measureText(s).width;
+	let x = SCREEN_W/3;
+	let y = SCREEN_H/6;
+	ctxHead.fillStyle="green";
+	ctxHead.fillText(s,x,y);
 	
-	for(let i =obj.length -1 ;i>=0;i--)
-	{
-		if(obj[i].erase)
-		{
-			obj.splice(i,1);
-		}
-	}
-	
-	//描画の処理
-	for( let i=0 , len=obj.length ; i<len ; i++ )
-	{
-		obj[i].draw();
-	}
-	
-	for( let i=0 ,len = obj.length ; i<len; i++ )
-	{
-			obj[i].update();
-	}
+	s = score;
+	x = x + w+5;
+	ctxHead.fillStyle="black";
+	ctxHead.fillText(s,x,y);
 }
 
 
+/////////////////////プレイ画面////////////////////////
+function gameLoop()
+{
+	ctxPlay.clearRect(0 , 0, SCREEN_W, SCREEN_H );
+	ctxHead.clearRect(0 , 0, canHead.width, canHead.height);
+	ctxPlay.drawImage(rope_2x, rope_x, rope_y, ROPE_W, ROPE_H );
+	ctxPlay.drawImage(saru_t, saru_x, saru_y, SARU_W, SARU_H );
+	ctxHead.drawImage(icon_t, ICON_X, ICON_Y, ICON_W, ICON_H);
+	ctxHead.drawImage(heart_1t, HEART_X1, HEART_Y, BLOCK_W/1.2, BLOCK_H/1.2);
+  ctxHead.drawImage(heart_2t, HEART_X2, HEART_Y, BLOCK_W/1.2, BLOCK_H/1.2);
+  ctxHead.drawImage(heart_3t, HEART_X3, HEART_Y, BLOCK_W/1.2, BLOCK_H/1.2);
+  ctxHead.drawImage(heart_4t, HEART_X4, HEART_Y, BLOCK_W/1.2, BLOCK_H/1.2);
+  ctxHead.drawImage(heart_5t, HEART_X5, HEART_Y, BLOCK_W/1.2, BLOCK_H/1.2);
+	
+	drawScore();
 
+	/*オブジェクトを削除する処理*/
+	for(let i=obj.length-1;i>=0;i--)
+	{	if(obj[i].erase){obj.splice(i,1);}}
+	
+	//描画の処理
+	for(let i=0,len=obj.length;i<len;i++)
+	{ obj[i].draw();}
+	//更新の処理
+	for(let i=0,len=obj.length;i<len;i++)
+	{	obj[i].update();}}
 
 
 //----------------操作処理-------------------------------------------------------
 // スマホ
-let tapLeft   = document.getElementById( "left"  );
-let tapRight  = document.getElementById( "right" );
-tapLeft.addEventListener(  "touchstart", touchLeft  ,{passive:false},{once:true});
-tapRight.addEventListener( "touchstart", touchRight ,{passive:false},{once:true});
+let board_l   = document.getElementById( "left"  );
+let board_r  = document.getElementById( "right" );
+board_l.addEventListener(  "touchstart", touchLeft  ,{passive:false},{once:true});
+board_r.addEventListener( "touchstart", touchRight ,{passive:false},{once:true});
 
 /* タップ操作の処理 */
 function touchLeft(e)
 {
   e.preventDefault();
+  if(over)return;
   // bgm.currentTime = 0;
-  bgm.play();
-	// if(over)return;
-  if(saru_x <= 0)return;/*移動制限*/
-  se_banana.currentTime = 0;
-	se_banana.play();
+  // bgm.play();
+  if((saru_x <= 0) || hit)return;/*移動制限*/
+  se_move.currentTime = 0;
+	se_move.play();
   ctxPlay.clearRect( saru_x, saru_y, SARU_W, SARU_H );
   dir_r = false;
 	saru_x -=SARU_SPEED;
@@ -304,12 +491,12 @@ function touchLeft(e)
 function touchRight(e)
 {
   e.preventDefault();
+  if(over)return;
   // bgm.currentTime = 0;
-  bgm.play();
-	// if(over)return;
-  if(saru_x >= ( SCREEN_W - SARU_W ))return;/*移動制限*/
-  se_banana.currentTime = 0;
-	se_banana.play();
+  // bgm.play();
+  if((saru_x >= ( SCREEN_W - SARU_W )) || hit)return;/*移動制限*/
+  se_move.currentTime = 0;
+	se_move.play();
   ctxPlay.clearRect( saru_x, saru_y, SARU_W, SARU_H );
   dir_r = true;
 	saru_x +=SARU_SPEED;
@@ -321,23 +508,23 @@ function touchRight(e)
 //キーボードが押された時の処理
 document.onkeydown = function(e)
 {
+	if(over)return;
 	// bgm.currentTime = 0;
-	bgm.play();
-	// if(over)return;
+	// bgm.play();
 	if( e.keyCode == 37 )
 	{
-		if(saru_x <= 0)return;/*移動制限*/
-		se_banana.currentTime = 0;
-		se_banana.play();
+		if((saru_x <= 0) || hit)return;/*移動制限*/
+		se_move.currentTime = 0;
+		se_move.play();
 		ctxPlay.clearRect( saru_x, saru_y, SARU_W, SARU_H );
 		dir_r = false;
 		saru_x -=SARU_SPEED;
 		((saru_t === saruType[0][0]) || (saru_t === saruType[2][0])) ? saru_t = saruType[3][0] : saru_t = saruType[2][0];
 		gameLoop();
 	}else if( e.keyCode == 39){
-		if(saru_x >= ( SCREEN_W - SARU_W ))return;/*移動制限*/
-		se_banana.currentTime = 0;
-		se_banana.play();
+		if((saru_x >= ( SCREEN_W - SARU_W )) || hit)return;/*移動制限*/
+		se_move.currentTime = 0;
+		se_move.play();
 		ctxPlay.clearRect( saru_x, saru_y, SARU_W, SARU_H );
 		dir_r = true;
 		saru_x +=SARU_SPEED;
@@ -347,42 +534,49 @@ document.onkeydown = function(e)
 }
 //----------------↑操作処理↑ココまで-------------------------------------------------------
 
-//初期化
+
+//初期化処理
 function init()
 {
+	//フラグ
+	over        = false;
+	loopStop    = false;
+	stageClear  = false;
+	currentLife = 1;
+	hit         = false;
+	//スコア
+	count_b     = 0;
+	count_a     = 0;
+	score       = 0;
+	//ロープ
+	rope_x = 0;
+  rope_y = SCREEN_H/2 - BLOCK_H*2;
+	//サル
+	saru_t=saruType[0][0];
+	saru_x=START_X;
+	saru_y=START_Y;
+	dir_r =true;
+	//アイコン
+	icon_t=iconType[0];
+	//ハート
+	heart_1t = heartType[1];
+	heart_2t = heartType[1];
+	heart_3t = heartType[1];
+	heart_4t = heartType[1];
+	heart_5t = heartType[1];
 	
-	//サルを初期化
-	saru_t.onload = function(){ctxPlay.drawImage( saru_t, saru_x, saru_y, SARU_W, SARU_H );}
+	obj.splice(0);
 	
-	//ロープを初期化
-	rope_2x.onload = function(){ctxPlay.drawImage( rope_2x, ROPE_X, ROPE_Y, ROPE_W, ROPE_H );}
-	
-	//サルアイコンを初期化
-	icon_t.onload = function(){ctxHead.drawImage( icon_t, ICON_X, ICON_Y, ICON_W, ICON_H);}
-	
-	//ハートを初期化
-	heart_t.onload = function()
-	{
-		ctxHead.drawImage(heart_t, HEART_X1, HEART_Y, BLOCK_W, BLOCK_H);
-	  ctxHead.drawImage(heart_t, HEART_X2, HEART_Y, BLOCK_W, BLOCK_H);
-	  ctxHead.drawImage(heart_t, HEART_X3, HEART_Y, BLOCK_W, BLOCK_H);
-	  ctxHead.drawImage(heart_t, HEART_X4, HEART_Y, BLOCK_W, BLOCK_H);
-	  ctxHead.drawImage(heart_t, HEART_X5, HEART_Y, BLOCK_W, BLOCK_H);
-	}
-}
-
-
-
-
-init();
-setInterval(gameLoop, gameSpeed);
-setInterval( function(){ obj.push( new Obj());} , repopTime );
-setInterval( function()
-	{
+	let loop1_id = setInterval(gameLoop, gameSpeed);
+	let loop2_id = setInterval( function(){ obj.push( new Obj());} , repopTime );
+	let loop3_id = setInterval( function(){
 		for( let i=0 , len=obj.length ; i<len ; i++ )
 		obj[i].moveObj();
 	},dropSpeed);
+}
 
+
+window.onload = init();
 
 </script>
 </body>
